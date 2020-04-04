@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Nav } from "../components/Nav";
+import { Sound } from "../components/Sound";
 
 export function Calm({ user, notion }) {
   const stepInit = "init";
@@ -49,7 +50,8 @@ export function Calm({ user, notion }) {
     }, 3000);
     setTimeout(() => {
       console.log("session over");
-      setSessionStarted(false);
+      setSessionStarted((prevSessionStarted) => !prevSessionStarted);
+      // setSessionStarted(false);
       setStep(stepStopped);
     }, sessionDurationMS);
   }
@@ -65,6 +67,7 @@ export function Calm({ user, notion }) {
       ) : (
         <button onClick={initializeSession}>Get me focused</button>
       )}
+      <Sound sessionStarted={sessionStarted}></Sound>
       {step === stepStopped ? <div>{userMessage}</div> : null}
     </main>
   );
