@@ -12,6 +12,8 @@ export function Calm({ user, notion }) {
   const [sessionStarted, setSessionStarted] = useState(false);
   const [userMessage, setUserMessage] = useState("init");
 
+  let calmScores = [];
+
   useEffect(() => {
     if (!user || !notion) {
       return;
@@ -27,17 +29,33 @@ export function Calm({ user, notion }) {
   }, [user, notion]);
 
   useEffect(() => {
+    console.log("calm", calm);
+    if (sessionStarted) {
+      calmScores.push(calm);
+    } else {
+      console.log("session");
+    }
+  }, [calm]);
+
+  function computeAverage(averages) {
+    return (
+      averages.reduce((acc, probability) => acc + probability) / averages.length
+    );
+  }
+
+  useEffect(() => {
     if (step === stepInit) {
       setUserMessage("Please put your phone away");
     } else if (step === stepStarted) {
       setUserMessage("Focus on the present");
     } else {
       // stopped
-      setUserMessage("Your results are");
+      const averageCalmScore = computeAverage(calmScores);
+      setUserMessage(`Your average calm score was ${averageCalmScore}`);
     }
   }, [step]);
 
-  const sessionDurationMS = 10 * 1000; // seconds multiplied by milli
+  const sessionDurationMS = 5 * 1000; // seconds multiplied by milli
   let sessionTimeout = null;
 
   function initializeSession() {
@@ -67,7 +85,7 @@ export function Calm({ user, notion }) {
       ) : (
         <button onClick={initializeSession}>Get me focused</button>
       )}
-      <Sound sessionStarted={sessionStarted}></Sound>
+      {/* <Sound sessionStarted={sessionStarted}></Sound> */}
       {step === stepStopped ? <div>{userMessage}</div> : null}
     </main>
   );
