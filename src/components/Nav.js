@@ -4,7 +4,7 @@ import { navigate } from "@reach/router";
 import { Status } from "./Status";
 import { Footer } from "./Footer";
 
-export function Nav({ notion }) {
+export function Nav({ notion, status }) {
   const [info, setInfo] = useState(null);
 
   function goToLogout() {
@@ -16,14 +16,14 @@ export function Nav({ notion }) {
       return;
     }
 
-    notion.getInfo().then(info => {
+    notion.getInfo().then((info) => {
       setInfo(info);
     });
   }, [notion]);
 
   return (
     <nav className="card">
-      <Status notion={notion} info={info} />
+      <Status notion={notion} status={status} info={info} />
       <button onClick={goToLogout} className="card-btn">
         Logout
       </button>

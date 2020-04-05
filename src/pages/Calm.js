@@ -2,17 +2,22 @@ import React, { useState, useEffect } from "react";
 import { Nav } from "../components/Nav";
 import { Sound } from "../components/Sound";
 
-export function Calm({ user, notion }) {
-  const stepInit = "init";
-  const stepStarted = "started";
-  const stepStopped = "stopped";
+const stepCalculate = "calculate";
+const stepInit = "init";
+const stepPumpUp = "pump up";
+const stepStarted = "started";
+const stepStopped = "stopped";
+const stepWindDown = "wind down";
 
+export function Calm({ user, notion, status }) {
   const [calm, setCalm] = useState(0);
-  const [step, setStep] = useState(stepInit);
+  const [calmScores, setCalmScores] = useState([]);
   const [sessionStarted, setSessionStarted] = useState(false);
+  const [song, setSong] = useState(null);
+  const [step, setStep] = useState(null);
   const [userMessage, setUserMessage] = useState("init");
 
-  let calmScores = [];
+  const { state, charging, sleepMode } = status || {};
 
   useEffect(() => {
     if (!user || !notion) {
@@ -29,64 +34,96 @@ export function Calm({ user, notion }) {
   }, [user, notion]);
 
   useEffect(() => {
-    console.log("calm", calm);
     if (sessionStarted) {
-      calmScores.push(calm);
-    } else {
-      console.log("session");
+      setCalmScores((prevCalmScores) => [...prevCalmScores, calm]);
     }
-  }, [calm]);
-
-  function computeAverage(averages) {
-    return (
-      averages.reduce((acc, probability) => acc + probability) / averages.length
-    );
-  }
+  }, [calm, sessionStarted]);
 
   useEffect(() => {
+    if (!step) {
+      return;
+    }
+
     if (step === stepInit) {
       setUserMessage("Please put your phone away");
+      setTimeout(() => {
+        setStep(stepStarted);
+        console.log("Session init");
+      }, 3000);
     } else if (step === stepStarted) {
       setUserMessage("Focus on the present");
+      setSong("circles");
+      setTimeout(() => {
+        console.log("session calculating");
+        setStep(stepCalculate);
+      }, 3000);
+    } else if (step === stepCalculate) {
+      setUserMessage("Calculating...");
+      const averageCalmScore = computeAverage(calmScores);
+      setTimeout(() => {
+        if (averageCalmScore > 0.4) {
+          setStep(stepPumpUp);
+        } else {
+          setStep(stepWindDown);
+        }
+      }, 3000);
+    } else if (step === stepPumpUp) {
+      setUserMessage("Lets go!");
+      setSong("pumpUp");
+      setTimeout(() => {
+        stopSession();
+      }, 60 * 1000);
+    } else if (step === stepWindDown) {
+      setUserMessage("Enjoy these nice sounds...");
+      setSong("ocean");
+      setTimeout(() => {
+        stopSession();
+      }, 60 * 1000);
     } else {
       // stopped
-      const averageCalmScore = computeAverage(calmScores);
-      setUserMessage(`Your average calm score was ${averageCalmScore}`);
+      setSong("none");
+      setUserMessage("Session complete!");
     }
   }, [step]);
 
-  const sessionDurationMS = 5 * 1000; // seconds multiplied by milli
-  let sessionTimeout = null;
+  const stopSession = () => {
+    setSessionStarted(false);
+    setStep(stepStopped);
+  };
 
-  function initializeSession() {
+  const initializeSession = () => {
     console.log("Session init");
     setSessionStarted(true);
     setStep(stepInit);
-    setTimeout(() => {
-      setStep(stepStarted);
-      console.log("Session started");
-    }, 3000);
-    setTimeout(() => {
-      console.log("session over");
-      setSessionStarted((prevSessionStarted) => !prevSessionStarted);
-      // setSessionStarted(false);
-      setStep(stepStopped);
-    }, sessionDurationMS);
-  }
+  };
 
   return (
     <main className="main-container">
-      {user ? <Nav notion={notion} /> : null}
-      <div className="calm-score">
-        &nbsp;{(calm * 100).toFixed(0)}% <div className="calm-word">Calm</div>
-      </div>
-      {sessionStarted ? (
-        <div>{userMessage}</div>
-      ) : (
-        <button onClick={initializeSession}>Get me focused</button>
+      {user ? <Nav notion={notion} status={status} /> : null}
+      {sleepMode ? null : (
+        <>
+          <div className="calm-score">
+            &nbsp;{(calm * 100).toFixed(0)}%{" "}
+            <div className="calm-word">Calm</div>
+          </div>
+          {sessionStarted ? (
+            <div>{userMessage}</div>
+          ) : (
+            <button onClick={initializeSession} className="card-btn">
+              Get me focused
+            </button>
+          )}
+          <div>{step === stepStopped ? <div>{userMessage}</div> : null}</div>
+        </>
       )}
-      {/* <Sound sessionStarted={sessionStarted}></Sound> */}
-      {step === stepStopped ? <div>{userMessage}</div> : null}
+      <Sound sessionStarted={sessionStarted} song={song}></Sound>
     </main>
+  );
+}
+
+function computeAverage(averages) {
+  return (
+    averages.reduce((acc, probability) => acc + probability, 0) /
+    averages.length
   );
 }

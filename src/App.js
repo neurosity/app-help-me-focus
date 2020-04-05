@@ -13,6 +13,7 @@ export function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [deviceId, setDeviceId] = useLocalStorage("deviceId");
+  const [status, setStatus] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -34,13 +35,27 @@ export function App() {
       return;
     }
 
-    const subscription = notion.onAuthStateChanged().subscribe(user => {
+    const subscription = notion.onAuthStateChanged().subscribe((user) => {
       if (user) {
         setUser(user);
       } else {
         navigate("/");
       }
       setLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [notion]);
+
+  useEffect(() => {
+    if (!notion) {
+      return;
+    }
+
+    const subscription = notion.status().subscribe((status) => {
+      setStatus(status);
     });
 
     return () => {
@@ -67,7 +82,7 @@ export function App() {
         setUser={setUser}
         setDeviceId={setDeviceId}
       />
-      <Calm path="/calm" notion={notion} user={user} />
+      <Calm path="/calm" notion={notion} user={user} status={status} />
       <Logout path="/logout" notion={notion} resetState={resetState} />
     </Router>
   );

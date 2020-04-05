@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 
 const statesLabels = {
   booting: "Starting OS...",
   shuttingOff: "Shutting off...",
   updating: "Updating OS...",
   online: "Online",
-  offline: "Offline"
+  offline: "Offline",
 };
 
 const stateColors = {
@@ -13,26 +13,11 @@ const stateColors = {
   shuttingOff: "darkslategrey",
   updating: "orange",
   online: "limegreen",
-  offline: "crimson"
+  offline: "crimson",
 };
 
-export function Status({ notion, info }) {
-  const [status, setStatus] = useState(null);
+export function Status({ info, status }) {
   const { state, charging, battery, sleepMode } = status || {};
-
-  useEffect(() => {
-    if (!notion) {
-      return;
-    }
-
-    const subscription = notion.status().subscribe(status => {
-      setStatus(status);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [notion]);
 
   if (!status) {
     return <div>Connecting to device...</div>;
@@ -40,9 +25,7 @@ export function Status({ notion, info }) {
 
   return (
     <aside>
-      {info ? (
-        <h3 className="card-heading">{info.deviceNickname}</h3>
-      ) : null}
+      {info ? <h3 className="card-heading">{info.deviceNickname}</h3> : null}
       <div className="status-item status-state">
         <span
           className="status-indicator"
